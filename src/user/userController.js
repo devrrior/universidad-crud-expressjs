@@ -2,15 +2,19 @@ var userService = require('./userServices');
 
 var createUserControllerFunc = async (req, res) =>  {
     try {
-    console.log(req.body);
-    var status = await userService.createUserDBService(req.body);
-    console.log(status);
+        var {status: isUserExists} = await userService.getByEmailDBService(req.body.email);
 
-    if (status) {
-        res.send({ "status": true, "message": "Usuario creado" });
-    } else {
-        res.send({ "status": false, "message": "Error creando usuario" });
-    }
+        if(isUserExists) {
+            return res.send({ status: false, message: "Usuario con correo existente"})
+        }
+
+        var status = await userService.createUserDBService(req.body);
+
+        if (status) {
+            res.send({ "status": true, "message": "Usuario creado" });
+        } else {
+            res.send({ "status": false, "message": "Error creando usuario" });
+        }
     }
     catch(err) {
         console.log(err);
@@ -33,4 +37,49 @@ var loginUserControllerFunc = async (req, res) => {
     }
 }
 
-module.exports = { createUserControllerFunc, loginUserControllerFunc };
+var getUserByFirstNameControllerFunc = async (req, res) => {
+    var result = null;
+    try {
+        result = await userService.getUserByFirstNameDBService(req.query.firstname);
+        res.send(result);
+    } catch (error) {
+        console.log(error);
+        res.send({ "status": false, "message": error.msg });
+    }
+}
+
+var updateUserByIdControllerFunc = async (req, res) => {
+    var result = null;
+    try {
+        result = await userService.updateUserDBService(req.params.id, req.body);
+        res.send(result);
+    } catch (error) {
+        console.log(error);
+        res.send({ "status": false, "message": error.msg });
+    }
+}
+
+var deleteUserByIdControllerFunc = async (req, res) => {
+    var result = null;
+    try {
+        var {status: isUserExists} = await userService.getByIdDBService(req.params.id);
+        console.log(`is exist ${isUserExists}`);
+
+
+        if(isUserExists) {
+            return res.send({ status: false, message: "Usuario no existe"})
+        }
+
+        result = await userService.deleteUserDBService(req.params.id);
+        res.send(result);
+    } catch (error) {
+        console.log(error);
+        res.send({ "status": false, "message": error.msg });
+    }
+}
+
+module.exports = { createUserControllerFunc,
+                    loginUserControllerFunc,
+                    getUserByFirstNameControllerFunc,
+                    updateUserByIdControllerFunc,
+                    deleteUserByIdControllerFunc};
